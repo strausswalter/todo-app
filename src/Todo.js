@@ -1,21 +1,35 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import List from "./components/List";
 import "./Todo.css";
 import TodoForm from './components/TodoForm';
+import Modal from './components/Modal';
 import Item from './components/Item';
+
+const SAVED_ITEMS = "savedItems";//constante para usar no localstorage
 
 function Todo() {
   
+  const [showModal, setShowModal] = useState(false);
   const [items, setItems] = useState([]);
 
-  function onAddItem(it){
+  useEffect(()=>{
+    let savedItems = JSON.parse(localStorage.getItem(SAVED_ITEMS));
+    if(savedItems){
+      return() => setItems(savedItems);
+      
+    }
+  },[])//fazer apenas na 1a vez que for carregado, não monitora nenhuma outra alteração de estado (não renderiza novamente)
 
-    let item = new Item(it);
-
+  useEffect(()=>{
+    localStorage.setItem(SAVED_ITEMS, JSON.stringify(items));
+  },[items])//monitora a alteração do estado 'items' e salva no localstorage
+  
+  function onAddItem(text){
+    let item = new Item(text);
     setItems([...items, item]);
+    onHideModal();
 
   }
-
 
 function onItemDeleted(item){
   let filteredItems = items.filter(it => it.id !== item.id);
@@ -32,16 +46,21 @@ function onDone(item){
     setItems(updatedItems);
 };
 
-
+function onHideModal(){
+  setShowModal(false);
+}
 
   return (
     <div className="container">
-      <h1>Todo</h1>
-      <TodoForm onAddItem={onAddItem} />
+      <header className="header">
+        <h1>Todo</h1>
+        <button onClick={()=>{setShowModal(true)}} className="addButton">+</button>
+      </header>
+
       <List items={ items } onItemDeleted={onItemDeleted} onDone={onDone}/>
+      <Modal show={showModal} onHideModal={onHideModal}><TodoForm onAddItem={onAddItem} /></Modal>
     </div>
   );
 }
-
 
 export default Todo;
